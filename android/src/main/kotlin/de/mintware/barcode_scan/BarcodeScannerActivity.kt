@@ -19,8 +19,10 @@ class BarcodeScannerActivity : Activity(), ZXingScannerView.ResultHandler {
     private var scannerView: ZXingScannerView? = null
 
     companion object {
+        var cameraUnit = -1
         const val TOGGLE_FLASH = 200
         const val CANCEL = 300
+        const val SWITCH = 400
         const val EXTRA_CONFIG = "config"
         const val EXTRA_RESULT = "scan_result"
         const val EXTRA_ERROR_CODE = "error_code"
@@ -49,10 +51,6 @@ class BarcodeScannerActivity : Activity(), ZXingScannerView.ResultHandler {
     }
 
     private fun setupScannerView() {
-        if (scannerView != null) {
-            return
-        }
-
         scannerView = ZXingAutofocusScannerView(this).apply {
             setAutoFocus(config.android.useAutoFocus)
             val restrictedFormats = mapRestrictedBarcodeTypes()
@@ -77,11 +75,23 @@ class BarcodeScannerActivity : Activity(), ZXingScannerView.ResultHandler {
         if (scannerView?.flash == true) {
             buttonText = config.stringsMap["flash_off"]
         }
+
         val flashButton = menu.add(0, TOGGLE_FLASH, 0, buttonText)
         flashButton.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
 
-        val cancelButton = menu.add(0, CANCEL, 0, config.stringsMap["cancel"])
+        val switchButton = menu.add(0, SWITCH, 1, "Switch")
+        switchButton.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+
+        val cancelButton = menu.add(0, CANCEL, 2, "Cancel")
         cancelButton.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+
+        if (scannerView?.flash == true) {
+            menu.getItem(0).setIcon(resources.getDrawable(R.drawable.ic_barcode_flash_off,theme))
+        } else {
+            menu.getItem(0).setIcon(resources.getDrawable(R.drawable.ic_barcode_flash_on,theme))
+        }
+        menu.getItem(1).setIcon(resources.getDrawable(R.drawable.ic_switch,theme))
+        menu.getItem(2).setIcon(resources.getDrawable(R.drawable.ic_close,theme))
 
         return super.onCreateOptionsMenu(menu)
     }
@@ -95,6 +105,22 @@ class BarcodeScannerActivity : Activity(), ZXingScannerView.ResultHandler {
         if (item.itemId == CANCEL) {
             setResult(RESULT_CANCELED)
             finish()
+            return true
+        }
+        if (item.itemId == SWITCH) {
+            if (cameraUnit == -1 || cameraUnit == 0) {
+                cameraUnit = 1
+            }else if (cameraUnit == 1){
+                cameraUnit = 0
+            } else {
+                cameraUnit = -1
+            }
+            scannerView?.stopCamera()
+            setupScannerView()
+            scannerView?.setResultHandler(this)
+            scannerView?.startCamera(cameraUnit)
+            scannerView?.resumeCameraPreview(this)
+            scannerView?.setAutoFocus(true)
             return true
         }
         return super.onOptionsItemSelected(item)

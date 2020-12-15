@@ -12,6 +12,7 @@ class BarcodeScannerViewController: UIViewController {
   private var previewView: UIView?
   private var scanRect: ScannerOverlay?
   private var scanner: MTBBarcodeScanner?
+  private var useCamera = -1
   
   var config: Configuration = Configuration.with {
     $0.strings = [
@@ -171,18 +172,37 @@ class BarcodeScannerViewController: UIViewController {
   @objc private func onToggleFlash() {
     setFlashState(!isFlashOn)
   }
+
+  @objc private func switchCamera() {
+      if (useCamera == -1 || useCamera == 0) {
+          useCamera = 1
+      }else if (useCamera == 1){
+          useCamera = 0
+      } else {
+          useCamera = -1
+      }
+      viewDidAppear(true)
+
+    //scanner?.stopScanning()
+
+    //scannerView?.stopCamera()
+    //setupScannerView()
+    //scannerView?.setResultHandler(this)
+    //scannerView?.startCamera(cameraUnit)
+    //scannerView?.resumeCameraPreview(this)
+    //scannerView?.setAutoFocus(true)
+  }
   
   private func updateToggleFlashButton() {
-    if !hasTorch {
-      return
-    }
+    //if !hasTorch {
+    //  return
+    //}
     
     let buttonText = isFlashOn ? config.strings["flash_off"] : config.strings["flash_on"]
-    navigationItem.rightBarButtonItem = UIBarButtonItem(title: buttonText,
-                                                        style: .plain,
-                                                        target: self,
-                                                        action: #selector(onToggleFlash)
-    )
+    let btnFlash = UIBarButtonItem(title: buttonText, style: .plain, target: self, action: #selector(onToggleFlash))
+    let btnSwitch = UIBarButtonItem(title: "Switch", style: .plain, target: self, action: #selector(switchCamera))
+
+    self.navigationItem.setRightBarButtonItems([btnFlash, btnSwitch], animated: true)
   }
   
   private func setFlashState(_ on: Bool) {
@@ -228,6 +248,6 @@ class BarcodeScannerViewController: UIViewController {
   }
   
   private var cameraFromConfig: MTBCamera {
-    return config.useCamera == 1 ? .front : .back
+    return useCamera == 1 ? .front : .back
   }
 }
